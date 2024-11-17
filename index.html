@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sider Fee - Referral Program</title>
+    
+        
+        <link rel="stylesheet" href="styles.css"> 
+    
+    <script>
+        let payments = [];
+        let referrals = [];
+        let secretEarnings = 0;  // Programmers or admin earnings
+        let referralCode = 'SiderFee2023';  // Sample referral code
+        let userProfile = {
+            email: '',
+            phone: '',
+            profilePicture: '',
+            isVerified: false, // Track if user is verified
+            isAdmin: false,    // Track if user is admin
+            balance: 0,        // User balance
+            referralCount: 0   // Number of referrals made
+        };
+
+        // Function to show the desired page
+        function showPage(pageId) {
+            const pages = document.querySelectorAll('.page');
+            pages.forEach(page => {
+                page.style.display = 'none'; // Hide all pages
+            });
+            document.getElementById(pageId).style.display = 'block'; // Show the selected page
+        }
+
+        // Admin Login functionality
+        function adminLogin(event) {
+            event.preventDefault();
+            const adminPassword = document.getElementById('adminPassword').value;
+
+            // Simple admin password check (for example purpose)
+            if (adminPassword === "adminPass123") {
+                userProfile.isAdmin = true; // Set as admin
+                secretEarnings += 500; // Assign some secret earnings
+                displayNotification("Admin login successful! You now have access to secret earnings.");
+                showAdminPanel();
+            } else {
+                displayNotification("Invalid admin password. Please try again.");
+            }
+        }
+
+        function showAdminPanel() {
+            const adminContent = `
+                <h2>Secret Earnings Overview</h2>
+                <p>Total Secret Earnings: <strong>${secretEarnings} KSh</strong></p>
+                <button onclick="withdrawSecretEarnings()">Withdraw Secret Earnings</button>
+            `;
+            document.getElementById('adminContent').innerHTML = adminContent;
+            document.getElementById('adminPage').style.display = 'block'; // Show Admin Page
+        }
+
+        function withdrawSecretEarnings() {
+            // Process the withdrawal logic for admin earnings
+            alert("Withdrawn: " + secretEarnings + " KSh from secret earnings.");
+            secretEarnings = 0; // Reset secret earnings after withdrawal
+            showAdminPanel(); // Refresh the admin panel
+        }
+
+        // Register User
+        function registerUser(event) {
+            event.preventDefault();
+            const email = document.getElementById('registerEmail').value;
+            const password = document.getElementById('registerPassword').value;
+            const phone = document.getElementById('phone').value;
+
+            userProfile.email = email;  // Save email to user profile
+            userProfile.phone = phone;   // Save phone number to user profile
+            userProfile.balance += 100;  // Add registration fee for further deductions
+            
+            // Assume a referral system is in place
+            // For demo purposes, let's say the referrer code is hardcoded
+            const referrerCode = prompt("Enter the referrer code (if any):");
+            if (referrerCode) {
+                userProfile.referralCount += 1; // Increment referral count
+                // Simulate adding earnings to referrer and deducting program fee
+                displayNotification("You have registered successfully and the referral details have been processed.");
+                if (referrals.indexOf(referrerCode) === -1) {
+                    referrals.push(referrerCode);
+                }
+                userProfile.balance -= 100; // Deduct 100 for registration fee
+                payments.push({ type: 'referral', amount: 70, date: new Date(), referrer: referrerCode });
+                displayNotification(`You have sent 70 KSh to the referrer (${referrerCode}).`);
+                payments.push({ type: 'program', amount: 30, date: new Date() });
+            }
+
+            displayNotification(`A verification code has been sent to ${email}!`);
+            showPage('verificationPage'); // Go to verification page
+        }
+
+        // Login User
+        function loginUser(event) {
+            event.preventDefault();
+            const password = document.getElementById('loginPassword').value;
+
+            // Dummy login check (replace with actual authentication logic)
+            if (password === "password123") {  // Example password check
+                displayNotification("Login successful!");
+                showPage('dashboardPage'); // Show dashboard after login
+            } else {
+                displayNotification("Invalid password. Please try again.");
+            }
+        }
+
+        // Verify User
+        function verifyUser(event) {
+            event.preventDefault();
+            const verificationCode = document.getElementById('verificationCode').value;
+
+            // Dummy verification for the sake of the example
+            if (verificationCode === "123456") {
+                displayNotification("Verification successful!");
+                userProfile.isVerified = true; // Update verified status
+                showPage('dashboardPage'); // Show dashboard upon successful verification
+                displayDashboard(); // Populate the dashboard
+            } else {
+                displayNotification("Invalid verification code. Please try again.");
+            }
+        }
+
+        // Display user dashboard
+        function displayDashboard() {
+            let totalReferralEarnings = payments.filter(payment => payment.type === 'referral')
+                .reduce((sum, payment) => sum + payment.amount, 0);
+            let totalProgramEarnings = payments.filter(payment => payment.type === 'program')
+                .reduce((sum, payment) => sum + payment.amount, 0);
+
+            let dashboardContent = `
+                <h2>Your Dashboard</h2>
+                <p>Your Referral Code: <strong>${referralCode}</strong></p>
+                <p>Current Balance: <strong>${userProfile.balance} KSh</strong></p>
+
+                <h3>Total Earnings Summary</h3>
+                <p>Referral Earnings: <strong>${totalReferralEarnings} KSh</strong></p>
+                <p>Program Earnings: <strong>${totalProgramEarnings} KSh</strong></p>
+                <p>Total Referrals Made: <strong>${userProfile.referralCount}</strong></p>
+
+                <h3>Recent Transactions</h3>
+                <table>
+                    <tr>
+                        <th>Type</th>
+                        <th>Amount (KSh)</th>
+                        <th>Date</th>
+                    </tr>
+                    ${payments.map(payment => `<tr>
+                        <td>${payment.type}</td>
+                        <td>${payment.amount}</td>
+                        <td>${payment.date.toLocaleString()}</td>
+                    </tr>`).join('')}
+                </table>
+
+                <h3>Actions</h3>
+                ${userProfile.isVerified ? `
+                    <button onclick="withdrawFunds()" ${userProfile.balance < 200 ? "disabled" : ""}>Withdraw Funds</button>
+                ` : '<p>Please complete your verification to access the withdrawal option.</p>'}
+                <button onclick="showPage('profilePage')">Edit Profile</button>
+                <div class="social-share">
+                    <h3>Share Your Referral Link:</h3>
+                    <input type="text" value="${window.location.href}?ref=${referralCode}" readonly>
+                    <button onclick="shareViaFacebook()">Share on Facebook</button>
+                    <button onclick="shareViaTwitter()">Share on Twitter</button>
+                </div>
+            `;
+            document.getElementById('dashboardContent').innerHTML = dashboardContent;
+
+            // Show admin section if admin
+            if (userProfile.isAdmin) {
+                showAdminPanel(); // Show admin panel if logged in as admin
+            }
+        }
+
+        function withdrawFunds() {
+            if (userProfile.balance >= 200) {
+                userProfile.balance -= 200; // Deduct 200 KSh from balance for withdrawal
+                displayNotification("Withdrawal of 200 KSh was successful.");
+            } else {
+                displayNotification("Insufficient balance to withdraw. You must have at least 200 KSh.");
+            }
+            displayDashboard(); // Update dashboard after withdrawal
+        }
+
+        function shareViaFacebook() {
+            const url = `${window.location.href}?ref=${referralCode}`;
+            window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
+        }
+
+        function shareViaTwitter() {
+            const url = `${window.location.href}?ref=${referralCode}`;
+            window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}`, '_blank');
+        }
+
+        // Display Notification
+        function displayNotification(message) {
+            const notification = document.querySelector('.notification');
+            notification.style.display = 'block';
+            notification.innerHTML = message;
+
+            // Automatically hide the notification after 5 seconds
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 5000);
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            showPage('welcomePage'); // Show the welcome page on load
+        });
+    </script>
+</head>
+
+<body>
+    <!-- Header Section -->
+    <header>
+        <h1>Sider Fee Referral Program</h1>
+        <p>Earn money by referring your friends!</p>
+    </header>
+
+    <!-- Navigation Bar -->
+    <div class="navbar">
+        <a href="#" onclick="showPage('welcomePage')">Home</a>
+        <a href="#" onclick="showPage('registrationPage')">Register / Login</a>
+        <a href="#" onclick="showPage('dashboardPage')">Dashboard</a>
+        <a href="#" onclick="showPage('paymentPage')">Payments</a>
+        <a href="#" onclick="showPage('programPage')">Program Overview</a> <!-- New link -->
+        <a href="#" onclick="showPage('adminPage')">Admin Panel</a> <!-- Admin link -->
+    </div>
+
+    <!-- Notification Banner -->
+    <div class="notification"></div>
+
+    <!-- Page Container -->
+    <div class="container">
+
+        <!-- Welcome Page -->
+        <div id="welcomePage" class="page" style="display: block;">
+            <h1>Welcome to Sider Fee</h1>
+            <p>Your pathway to earning through referrals!</p>
+        </div>
+
+        <!-- Registration/Login Page -->
+        <div id="registrationPage" class="page" style="display:none;">
+            <h1>Register / Login for Sider Fee</h1>
+            
+            <h2>Register New Account</h2>
+            <form id="registrationForm" onsubmit="registerUser(event);">
+                <label for="registerEmail">Email:</label>
+                <input type="email" id="registerEmail" required>
+                <label for="registerPassword">Password:</label>
+                <input type="password" id="registerPassword" required>
+                <label for="phone">Phone Number:</label>
+                <input type="tel" id="phone" pattern="[0-9]{10}" placeholder="e.g. 0712345678" required>
+                <button type="submit">Register</button>
+            </form>
+
+            <h2>OR</h2>
+
+            <h2>Login to Existing Account</h2>
+            <form id="loginForm" onsubmit="loginUser(event);">
+                <label for="loginPassword">Password:</label>
+                <input type="password" id="loginPassword" required>
+                <button type="submit">Login</button>
+            </form>
+
+        </div>
+
+        <!-- Verification Page -->
+        <div id="verificationPage" class="page" style="display:none;">
+            <h1>Verification</h1>
+            <form onsubmit="verifyUser(event);">
+                <label for="verificationCode">Enter the verification code sent to your email:</label>
+                <input type="text" id="verificationCode" required>
+                <button type="submit">Verify</button>
+                <p>By verifying, you agree to our <a href="#">Terms and Conditions</a>.</p>
+            </form>
+        </div>
+
+        <!-- Payment Page -->
+        <div id="paymentPage" class="page" style="display:none;">
+            <h1>Activate Your Account</h1>
+            <p>You must complete registration and verification to enable payments.</p>
+        </div>
+
+        <!-- User Dashboard -->
+        <div id="dashboardPage" class="page" style="display:none;">
+            <div id="dashboardContent"></div>
+        </div>
+
+        <!-- Profile Page -->
+        <div id="profilePage" class="page" style="display:none;">
+            <h2>Your Profile</h2>
+            <form onsubmit="updateProfile(event)">
+                <label for="profileEmail">Email:</label>
+                <input type="email" id="profileEmail" value="${userProfile.email || ''}" required>
+                <label for="profilePhone">Phone Number:</label>
+                <input type="tel" id="profilePhone" value="${userProfile.phone || ''}" required pattern="[0-9]{10}">
+                <button type="submit">Update Profile</button>
+            </form>
+        </div>
+
+        <!-- Program Overview Page -->
+        <div id="programPage" class="page" style="display:none;">
+            <div class="program-content">
+                <h1>Program Overview</h1>
+                <p>Welcome to the Sider Fee Referral Program! Here’s what you need to know:</p>
+                <h2>How It Works</h2>
+                <p>By referring your friends to join Sider Fee, you can earn money through referral bonuses. Every successful registration using your referral code earns you cash.</p>
+                <h2>Referral Earnings</h2>
+                <p>For every friend who signs up using your referral code, you earn KSh 70!</p>
+                <h2>Program Earnings</h2>
+                <p>Additionally, KSh 30 from each registration goes to the program to support operations.</p>
+                <h2>Minimum Balance for Withdrawal</h2>
+                <p>You must have at least KSh 200 in your account to request a withdrawal.</p>
+                <p>Invite as many friends as you can and watch your earnings grow!</p>
+            </div>
+        </div>
+
+        <!-- Admin Panel -->
+        <div id="adminPanel" class="page" style="display:none;">
+            <h1>Admin Panel</h1>
+            <form onsubmit="adminLogin(event);">
+                <label for="adminPassword">Enter Admin Password:</label>
+                <input type="password" id="adminPassword" required>
+                <button type="submit">Login</button>
+            </form>
+            <div id="adminPage">
+                <div id="adminContent"></div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>&copy; 2023 Sider Fee. All rights reserved.</p>
+            <a href="#" style="color: white;">Privacy Policy</a> | <a href="#" style="color: white;">Terms and Conditions</a> | <a href="#" style="color: white;">Contact Support</a>
+        </div>
+    </div>
+
+</body>
+
+</html>
